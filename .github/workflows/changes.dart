@@ -78,10 +78,10 @@ class _searchfoodState extends State<searchfood> {
               child:  TextField(
                 onChanged: (val)
                 {
-                  dbconnection();
                   setState(() {
                     food=val;
                   });
+                  dbconnection();
                 },
                 decoration: InputDecoration(
                   border: OutlineInputBorder(),

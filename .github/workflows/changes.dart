@@ -1,112 +1,199 @@
 import 'package:flutter/material.dart';
-import 'package:mysql1/mysql1.dart';
-import 'package:calories_tracker/pages/add_food.dart';
-import 'package:calories_tracker/widgets/search_suggestions.dart';
-import 'package:flutter/services.dart';
-class searchfood extends StatefulWidget {
-  const searchfood({Key key}) : super(key: key);
+import 'package:shared_preferences/shared_preferences.dart';
+
+class loginPage extends StatefulWidget {
+  const loginPage({Key? key}) : super(key: key);
 
   @override
-  _searchfoodState createState() => _searchfoodState();
+  _loginPageState createState() => _loginPageState();
 }
 
-class _searchfoodState extends State<searchfood> {
-  var food="",res,fname="";
-
-  List<String> returnedFoods = [];
-
+class _loginPageState extends State<loginPage> {
+  bool loginReg = true;
+  @override
+  void initState() {
+    // TODO: implement initState
+    super.initState();
+  }
   @override
   Widget build(BuildContext context) {
-
-    void dbconnection() async {
-      var settings=new ConnectionSettings(
-          host: "caloriestracker.cule8a3xeym9.ap-south-1.rds.amazonaws.com",
-          port: 3306,
-          user: 'admin',
-          password: 'calories_o2',
-          db: 'CALORIES_TRACKER'
-      );
-      var conn= await MySqlConnection.connect(settings);
-      res = await conn.query('select FOOD from MACROS where food=?',[food]);
-      returnedFoods.clear();
-      for(var r in res)
-      {
-        returnedFoods.add(r[0]);
-        print(r[0]);
-      }
-      
-      /*fname=res.toString();
-      fname=fname.substring(16,16+food.length);
-      fname=fname.toLowerCase();
-      print(returnedFoods.length);
-      if(fname==food){
-        setState(() {});
-      }*/
-      setState(() {});
-    }
-
-    Future <List<String>> getFoodList() async
-    {
-      Future.delayed(Duration(seconds: 1),(){
-        dbconnection();
-        return returnedFoods;
-      });
-    }
-
     return Scaffold(
-      backgroundColor: Colors.white,
       appBar: AppBar(
-        backgroundColor: Colors.orange,
-        foregroundColor: Colors.white,
-        title: Text(
-          'SEARCH FOODS',
-          style: TextStyle(
-            fontSize: 18.0,
-          ),
-        ),
-        elevation: 0.0,
-        centerTitle: true,
-        systemOverlayStyle: SystemUiOverlayStyle(
-        ),
+        backgroundColor: Colors.purple,
       ),
-      body: Column(
-        children: <Widget> [
-          Container(
-            color: Colors.white,
-            child: Padding(
-              padding: EdgeInsets.symmetric(horizontal: 8, vertical: 16),
-              child:  TextField(
-                onChanged: (val)
-                {
-                  setState(() {
-                    food=val;
-                  });
-                  dbconnection();
-                },
-                decoration: InputDecoration(
-                  border: OutlineInputBorder(),
-                  hintText: 'Enter food name',
-                  hintStyle: TextStyle(
-                  ),
-                ),
-              ),
+      body: Container(
+        child: Column(
+          children: <Widget>[
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                TextButton(onPressed: (){setState(() {
+                  loginReg = true;
+                });}, child: Text('login')),
+                TextButton(onPressed: (){setState(() {
+                  loginReg = false;
+                });}, child: Text('register'))
+              ],
+            ),
+            Container(
+              child: loginReg
+                  ?Padding(padding: const EdgeInsets.all(25), child: loginForm(),)
+
+                  :Padding(padding: const EdgeInsets.all(25), child: registerForm(),),
+            )
+          ],
+        )
+      )
+    );
+  }
+}
+
+
+class loginForm extends StatefulWidget {
+  const loginForm({Key? key}) : super(key: key);
+
+  @override
+  _loginFormState createState() => _loginFormState();
+}
+
+class _loginFormState extends State<loginForm> {
+  String uid = 'sample';
+  String uname = 'sample';
+  String? errorText;
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      child: Column(
+        children: [
+          TextField(
+            onChanged: (value){
+              uid = value;
+            },
+            decoration: InputDecoration(
+              prefixIcon: Icon(Icons.person),
+              hintText: 'User ID',
+              errorText: errorText,
             ),
           ),
-          SingleChildScrollView(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(8.0, 2.0, 8.0, 0.0),
-              child: Material(
-                color: Colors.white,
-                child: Column(
-                  children: List.generate(returnedFoods.length, (index) => suggestion(
-                    foodName: returnedFoods[index],
-                  )),
-                ),
+          SizedBox(height: 30.0,),
+          GestureDetector(
+            onTap: () async {
+              //steps
+              // 1 - Check if username exists
+              // 2 - Set the username into the shared preferences.
+              if(await unameCheck(uid)){
+                errorText = null;
+                SharedPreferences sp = await SharedPreferences.getInstance();
+                sp.setBool('first_launch', false);
+                sp.setString('uid', uid);
+                //todo: read below
+                //get the user's actual name from DB and store it locally as well
+                //uncomment last line after this is done.
+                //uname =
+                //sp.setString('uname',uname);
+                Navigator.of(context).pushNamed('/home');
+              }
+              else{
+                setState(() {
+                  print('text setting error text');
+                  errorText = 'User name does not exist';
+                });
+              }
+            },
+            child: Container(
+              color: Colors.purpleAccent,
+              child: Padding(
+                padding: const EdgeInsets.all(12),
+                child: Text('Back on the Saddle'),
               ),
             ),
+          )
+        ],
+      )
+    );
+  }
+
+
+  Future<bool> unameCheck(String uname) async
+  {
+    //todo: database fucntions here to check username
+    //check if user  name already exists here
+    // is it does return true
+    
+    if(uname.length > 5) {return true;}
+    else{return false;}
+  }
+}
+
+class registerForm extends StatefulWidget {
+  const registerForm({Key? key}) : super(key: key);
+
+  @override
+  _registerFormState createState() => _registerFormState();
+}
+
+class _registerFormState extends State<registerForm> {
+  String uname = 'sample';
+  String uid = 'sample';
+  String? errorText;
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      child: Column(
+        children: [
+          TextField(
+            onChanged: (value){uname = value;},
+            decoration: InputDecoration(
+              prefixIcon: Icon(Icons.person),
+              hintText: 'Your Name'
+            ),
           ),
-        ]
+          SizedBox(height: 20,),
+          TextField(
+            onChanged: (value){uid = value;},
+            decoration: InputDecoration(
+              prefixIcon: Icon(Icons.star),
+              hintText: 'New User ID',
+              errorText: errorText,
+            ),
+          ),
+          SizedBox(height: 30,),
+          GestureDetector(
+            onTap: () async{
+              if(await register(uname, uid)){
+                errorText = null;
+                SharedPreferences sp = await SharedPreferences.getInstance();
+                await sp.setBool('first_launch', false);
+                await sp.setString('uname', uname);
+                await sp.setString('uid', uid);
+                Navigator.of(context).pushNamed('/home');
+              }
+              else{
+                setState(() {
+                  errorText = 'Choose a unique User ID';
+                });
+              }
+            },
+            child: Container(
+              color: Colors.purpleAccent,
+              child: Padding(
+                padding: const EdgeInsets.all(12),
+                child: Text('Lets Go!'),
+              ),
+            ),
+          )
+        ],
       ),
     );
+  }
+  Future<bool> register(String un, String ui) async
+  {
+    //todo: use this function to do database related stuff for registering user
+    //check validate if the uid variable is unique in the database
+    //if unique then insert into the db and return true, the rest is taken care.
+    //else return false, and the error text will pop up automatically
+
+    if(un.length > 5){return true;}
+    else{return false;}
   }
 }
